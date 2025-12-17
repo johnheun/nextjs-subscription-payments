@@ -121,6 +121,10 @@ const createOrRetrieveCustomer = async ({
   email: string;
   uuid: string;
 }) => {
+  if (!stripe) {
+    throw new Error('Stripe API key not configured. Unable to create or retrieve customer.');
+  }
+
   // Check if the customer already exists in Supabase
   const { data: existingSupabaseCustomer, error: queryError } =
     await supabaseAdmin
