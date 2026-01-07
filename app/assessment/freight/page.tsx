@@ -4,8 +4,17 @@ import { useState } from 'react';
 import CalibratedQuestion, { AssessmentResult } from '@/components/assessment/CalibratedQuestion';
 import { createClient } from '@/utils/supabase/client';
 
+// FIXED: Defined specific types for the Modal props instead of 'any'
+interface TrainingModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  isLoading: boolean;
+  content: string;
+  skillName: string;
+}
+
 // --- TRAINING MODAL COMPONENT ---
-function TrainingModal({ isOpen, onClose, isLoading, content, skillName }: any) {
+function TrainingModal({ isOpen, onClose, isLoading, content, skillName }: TrainingModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -22,7 +31,7 @@ function TrainingModal({ isOpen, onClose, isLoading, content, skillName }: any) 
             <p className="text-gray-500 animate-pulse">Analyzing your response with Claude AI...</p>
           </div>
         ) : (
-          <div className="prose prose-blue text-gray-800 text-lg leading-relaxed">
+          <div className="prose prose-blue text-gray-800 text-lg leading-relaxed whitespace-pre-wrap">
             {content}
           </div>
         )}
@@ -94,6 +103,7 @@ export default function FreightAssessmentPage() {
             is_correct: resultData.isCorrect,
             calibration_status: resultData.calibrationStatus
         };
+        
         await supabase.from('assessment_results').insert(payload);
     }
 
