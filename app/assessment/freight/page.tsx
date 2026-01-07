@@ -4,6 +4,40 @@ import { useState } from 'react';
 import CalibratedQuestion, { AssessmentResult } from '@/components/assessment/CalibratedQuestion';
 import { createClient } from '@/utils/supabase/client';
 
+// --- TRAINING MODAL COMPONENT ---
+function TrainingModal({ isOpen, onClose, isLoading, content, skillName }: any) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-in fade-in">
+      <div className="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl relative">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold">✕</button>
+        
+        <h2 className="text-2xl font-extrabold text-blue-700 mb-2">Micro-Coaching</h2>
+        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">{skillName}</h3>
+
+        {isLoading ? (
+          <div className="py-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto mb-4"></div>
+            <p className="text-gray-500 animate-pulse">Analyzing your response with Claude AI...</p>
+          </div>
+        ) : (
+          <div className="prose prose-blue text-gray-800 text-lg leading-relaxed">
+            {content}
+          </div>
+        )}
+
+        {!isLoading && (
+          <button onClick={onClose} className="mt-8 w-full py-3 bg-gray-100 text-gray-900 font-bold rounded-xl hover:bg-gray-200">
+            Got it, thanks.
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- MAIN PAGE ---
 const FREIGHT_DATA = [
   {
     id: 'SK-FB-01', name: 'Cold Calling', category: 'Sales',
@@ -37,6 +71,13 @@ export default function FreightAssessmentPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [results, setResults] = useState<AssessmentResult[]>([]);
   const [isFinished, setIsFinished] = useState(false);
+  
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loadingTraining, setLoadingTraining] = useState(false);
+  const [trainingContent, setTrainingContent] = useState("");
+  const [currentTrainingSkill, setCurrentTrainingSkill] = useState("");
+
   const supabase = createClient();
 
   const handleQuestionComplete = async (resultData: AssessmentResult) => {
@@ -53,7 +94,6 @@ export default function FreightAssessmentPage() {
             is_correct: resultData.isCorrect,
             calibration_status: resultData.calibrationStatus
         };
-        
         await supabase.from('assessment_results').insert(payload);
     }
 
@@ -64,18 +104,50 @@ export default function FreightAssessmentPage() {
     }
   };
 
+  const handleFixGap = async (result: AssessmentResult) => {
+    setIsModalOpen(true);
+    setLoadingTraining(true);
+    setCurrentTrainingSkill(result.skillName);
+    setTrainingContent("");
+
+    try {
+      const response = await fetch('/api/generate-training', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          skillName: result.skillName,
+          userLevel: result.selfRating,
+          mistakeContext: result.calibrationStatus
+        })
+      });
+      
+      const data = await response.json();
+      setTrainingContent(data.lesson || "Could not generate lesson.");
+    } catch (e) {
+      setTrainingContent("Error connecting to training engine.");
+    } finally {
+      setLoadingTraining(false);
+    }
+  };
+
   if (isFinished) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <TrainingModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)}
+          isLoading={loadingTraining}
+          content={trainingContent}
+          skillName={currentTrainingSkill}
+        />
+
         <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-10 text-center">
           <h1 className="text-3xl font-extrabold text-gray-900 mb-6">Assessment Complete</h1>
           <div className="space-y-4 text-left">
             {results.map((res, idx) => (
               <div key={idx} className="flex justify-between p-4 border rounded-xl bg-slate-50">
                 <div>
-                    {/* FIXED: Added text-gray-900 here so it isn't white */}
                     <span className="font-bold block text-gray-900">{res.skillName}</span>
-                    
                     <span className={`text-xs uppercase font-bold px-2 py-1 rounded ${
                         res.calibrationStatus === 'overconfident' ? 'bg-red-100 text-red-700' : 
                         res.calibrationStatus === 'aligned_expert' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700'
@@ -84,15 +156,16 @@ export default function FreightAssessmentPage() {
                     </span>
                 </div>
                 {res.trainingPath !== 'none' && (
-                    // BRANDING: Royal Blue Button
-                    <button className="text-sm bg-blue-700 text-white px-3 py-1 rounded hover:bg-blue-800">
+                    <button 
+                      onClick={() => handleFixGap(res)}
+                      className="text-sm bg-blue-700 text-white px-3 py-1 rounded hover:bg-blue-800 transition-all shadow-sm"
+                    >
                         Fix Gap
                     </button>
                 )}
               </div>
             ))}
           </div>
-          {/* BRANDING: Royal Blue Button */}
           <button onClick={() => window.location.href = '/dashboard'} className="mt-8 w-full py-3 bg-blue-700 text-white rounded-xl font-bold hover:bg-blue-800 transition-all shadow-md">
             Return to Dashboard
           </button>
