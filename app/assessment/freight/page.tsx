@@ -4,41 +4,112 @@ import { useState } from 'react';
 import CalibratedQuestion, { AssessmentResult } from '@/components/assessment/CalibratedQuestion';
 import { createClient } from '@/utils/supabase/client';
 
+// Define the shape of the Simulation Data
+interface SimulationData {
+  setup: string;
+  customer_dialogue: string;
+  options: { id: string; text: string; feedback: string }[];
+  correct_option_id: string;
+}
+
 interface TrainingModalProps {
   isOpen: boolean;
   onClose: () => void;
   isLoading: boolean;
-  content: string;
+  simulation: SimulationData | null;
   skillName: string;
 }
 
-// --- TRAINING MODAL COMPONENT ---
-function TrainingModal({ isOpen, onClose, isLoading, content, skillName }: TrainingModalProps) {
+// --- INTERACTIVE SIMULATION MODAL ---
+function TrainingModal({ isOpen, onClose, isLoading, simulation, skillName }: TrainingModalProps) {
+  const [selectedResponse, setSelectedResponse] = useState<string | null>(null);
+
   if (!isOpen) return null;
 
+  // Reset state when closing/opening (simple implementation)
+  const handleOptionClick = (id: string) => {
+    setSelectedResponse(id);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-in fade-in">
-      <div className="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl relative">
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 animate-in fade-in backdrop-blur-sm">
+      <div className="bg-white rounded-2xl max-w-2xl w-full p-8 shadow-2xl relative border border-gray-200">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold">✕</button>
         
-        <h2 className="text-2xl font-extrabold text-blue-700 mb-2">Micro-Coaching</h2>
-        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">{skillName}</h3>
+        <div className="mb-6">
+            <h2 className="text-xl font-extrabold text-blue-700">Micro-Simulation</h2>
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">{skillName}</h3>
+        </div>
 
         {isLoading ? (
-          <div className="py-12 text-center">
+          <div className="py-20 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto mb-4"></div>
-            <p className="text-gray-500 animate-pulse">Analyzing your response with Claude AI...</p>
+            <p className="text-gray-500 animate-pulse font-medium">Building scenario...</p>
+          </div>
+        ) : simulation ? (
+          <div className="space-y-6">
+            {/* 1. SCENARIO SETUP */}
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 text-sm text-slate-600 italic">
+                {simulation.setup}
+            </div>
+
+            {/* 2. CUSTOMER DIALOGUE (The "Challenge") */}
+            <div className="flex gap-4 items-start">
+                <div className="h-10 w-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs shrink-0">
+                    CUST
+                </div>
+                <div className="bg-red-50 p-4 rounded-r-xl rounded-bl-xl text-gray-900 font-medium border border-red-100 shadow-sm">
+                    "{simulation.customer_dialogue}"
+                </div>
+            </div>
+
+            {/* 3. USER OPTIONS */}
+            <div className="space-y-3 pl-14">
+                {simulation.options.map((opt) => {
+                    const isSelected = selectedResponse === opt.id;
+                    const isCorrect = opt.id === simulation.correct_option_id;
+                    
+                    // Styling logic for feedback state
+                    let btnClass = "w-full text-left p-4 rounded-xl border-2 transition-all hover:bg-slate-50 border-slate-200";
+                    
+                    if (selectedResponse) {
+                        if (isSelected && isCorrect) btnClass = "w-full text-left p-4 rounded-xl border-2 bg-green-50 border-green-500 ring-1 ring-green-500";
+                        else if (isSelected && !isCorrect) btnClass = "w-full text-left p-4 rounded-xl border-2 bg-red-50 border-red-500 ring-1 ring-red-500";
+                        else if (!isSelected && isCorrect) btnClass = "w-full text-left p-4 rounded-xl border-2 bg-green-50 border-green-500 opacity-60";
+                        else btnClass = "w-full text-left p-4 rounded-xl border-2 border-slate-100 opacity-40 grayscale";
+                    }
+
+                    return (
+                        <div key={opt.id}>
+                            <button 
+                                disabled={!!selectedResponse}
+                                onClick={() => handleOptionClick(opt.id)}
+                                className={btnClass}
+                            >
+                                <span className="font-bold mr-2 text-slate-400">{opt.id}.</span> 
+                                <span className="text-gray-800">{opt.text}</span>
+                            </button>
+                            
+                            {/* FEEDBACK REVEAL */}
+                            {selectedResponse && (isSelected || (isCorrect && !isSelected)) && (
+                                <div className={`mt-2 text-sm p-2 rounded ${isCorrect ? 'text-green-700' : 'text-red-600'}`}>
+                                    <strong>Feedback:</strong> {opt.feedback}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            {selectedResponse && (
+                <button onClick={onClose} className="mt-4 w-full py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-black">
+                    Continue
+                </button>
+            )}
+
           </div>
         ) : (
-          <div className="prose prose-blue text-gray-800 text-lg leading-relaxed whitespace-pre-wrap">
-            {content}
-          </div>
-        )}
-
-        {!isLoading && (
-          <button onClick={onClose} className="mt-8 w-full py-3 bg-gray-100 text-gray-900 font-bold rounded-xl hover:bg-gray-200">
-            Got it, thanks.
-          </button>
+             <div className="text-red-500 text-center py-10">Failed to load simulation.</div>
         )}
       </div>
     </div>
@@ -83,7 +154,7 @@ export default function FreightAssessmentPage() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingTraining, setLoadingTraining] = useState(false);
-  const [trainingContent, setTrainingContent] = useState("");
+  const [simulationData, setSimulationData] = useState<SimulationData | null>(null);
   const [currentTrainingSkill, setCurrentTrainingSkill] = useState("");
 
   const supabase = createClient();
@@ -102,7 +173,6 @@ export default function FreightAssessmentPage() {
             is_correct: resultData.isCorrect,
             calibration_status: resultData.calibrationStatus
         };
-        
         await supabase.from('assessment_results').insert(payload);
     }
 
@@ -117,7 +187,7 @@ export default function FreightAssessmentPage() {
     setIsModalOpen(true);
     setLoadingTraining(true);
     setCurrentTrainingSkill(result.skillName);
-    setTrainingContent("");
+    setSimulationData(null); // Reset previous data
 
     try {
       const response = await fetch('/api/generate-training', {
@@ -133,15 +203,14 @@ export default function FreightAssessmentPage() {
       const data = await response.json();
       
       if (data.error) {
-        setTrainingContent(`System Error: ${data.message}`);
+        console.error("Simulation Error:", data.message);
       } else {
-        setTrainingContent(data.lesson || "Could not generate lesson.");
+        setSimulationData(data);
       }
 
     } catch (e: unknown) {
-      // STRICT FIX: Safely check error type before accessing .message
       const errorMessage = e instanceof Error ? e.message : "Unknown connection error";
-      setTrainingContent(`Connection Error: ${errorMessage}`);
+      console.error("Connection Error:", errorMessage);
     } finally {
       setLoadingTraining(false);
     }
@@ -154,7 +223,7 @@ export default function FreightAssessmentPage() {
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)}
           isLoading={loadingTraining}
-          content={trainingContent}
+          simulation={simulationData}
           skillName={currentTrainingSkill}
         />
 
