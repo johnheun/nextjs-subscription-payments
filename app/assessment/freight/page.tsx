@@ -45,7 +45,7 @@ export default function FreightAssessmentPage() {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-        // FIXED: Added 'as any' to bypass strict TypeScript checking for the new table
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await supabase.from('assessment_results').insert({
             user_id: user.id,
             skill_id: resultData.skillId,
