@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import CalibratedQuestion from '@/components/assessment/CalibratedQuestion';
+// Import the type we defined in the component
+import CalibratedQuestion, { AssessmentResult } from '@/components/assessment/CalibratedQuestion';
 import { createClient } from '@/utils/supabase/client';
 
 const FREIGHT_DATA = [
@@ -35,11 +36,13 @@ const FREIGHT_DATA = [
 
 export default function FreightAssessmentPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [results, setResults] = useState<any[]>([]);
+  // FIXED: Explicitly use the AssessmentResult type array
+  const [results, setResults] = useState<AssessmentResult[]>([]);
   const [isFinished, setIsFinished] = useState(false);
   const supabase = createClient();
 
-  const handleQuestionComplete = async (resultData: any) => {
+  // FIXED: Explicitly type the incoming data
+  const handleQuestionComplete = async (resultData: AssessmentResult) => {
     const newResults = [...results, resultData];
     setResults(newResults);
 

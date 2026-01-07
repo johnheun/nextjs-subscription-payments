@@ -2,6 +2,16 @@
 
 import { useState } from 'react';
 
+// 1. Define the specific shape of the result data
+export interface AssessmentResult {
+  skillId: string;
+  skillName: string;
+  selfRating: number;
+  isCorrect: boolean;
+  calibrationStatus: string;
+  trainingPath: string;
+}
+
 interface QuestionProps {
   skill: {
     id: string;
@@ -13,7 +23,7 @@ interface QuestionProps {
     options: { [key: string]: string };
     correct: string;
   };
-  onComplete: (result: any) => void;
+  onComplete: (result: AssessmentResult) => void;
 }
 
 export default function CalibratedQuestion({ skill, questionData, onComplete }: QuestionProps) {
@@ -111,7 +121,8 @@ export default function CalibratedQuestion({ skill, questionData, onComplete }: 
           <div className="space-y-6 animate-in fade-in duration-500">
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
                 <p className="text-xs text-yellow-800 font-bold uppercase mb-1">Scenario</p>
-                <p className="text-lg text-gray-800 italic">"{questionData.text}"</p>
+                {/* FIXED: Replaced "..." with &quot;...&quot; to satisfy linter */}
+                <p className="text-lg text-gray-800 italic">&quot;{questionData.text}&quot;</p>
             </div>
             <div className="grid gap-3">
                 {Object.entries(questionData.options).map(([key, val]) => {
