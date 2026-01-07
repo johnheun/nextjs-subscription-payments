@@ -31,7 +31,8 @@ export async function POST(req: Request) {
     `;
 
     const message = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20240620",
+      // FIXED: Updated to the 4.5 Sonnet model ID from your screenshot
+      model: "claude-sonnet-4-5-20250929",
       max_tokens: 300,
       temperature: 0.7,
       messages: [
@@ -46,7 +47,6 @@ export async function POST(req: Request) {
   } catch (error: unknown) {
     console.error('AI API Error:', error);
     
-    // STRICT FIX: Safely check error type before accessing .message
     const errorMessage = error instanceof Error ? error.message : "Unknown Error";
     const errorType = error instanceof Error ? error.constructor.name : "UnknownType";
     
