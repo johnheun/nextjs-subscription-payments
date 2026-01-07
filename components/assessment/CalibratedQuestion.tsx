@@ -159,9 +159,10 @@ export default function CalibratedQuestion({ skill, questionData, onComplete }: 
                             key={key}
                             disabled={!!selectedOption}
                             onClick={() => handleSubmit(key)}
-                            className={`p-4 text-left border-2 rounded-xl transition-all duration-200 ${borderClass}`}
+                            // FIXED: Added 'text-gray-900' to force black text on white background
+                            className={`p-4 text-left border-2 rounded-xl transition-all duration-200 text-gray-900 ${borderClass}`}
                         >
-                            <span className="font-bold mr-2">{key}.</span> {val}
+                            <span className="font-bold mr-2 text-blue-700">{key}.</span> {val}
                         </button>
                     );
                 })}

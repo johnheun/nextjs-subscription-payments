@@ -73,10 +73,12 @@ export default function FreightAssessmentPage() {
             {results.map((res, idx) => (
               <div key={idx} className="flex justify-between p-4 border rounded-xl bg-slate-50">
                 <div>
-                    <span className="font-bold block">{res.skillName}</span>
+                    {/* FIXED: Added text-gray-900 here so it isn't white */}
+                    <span className="font-bold block text-gray-900">{res.skillName}</span>
+                    
                     <span className={`text-xs uppercase font-bold px-2 py-1 rounded ${
                         res.calibrationStatus === 'overconfident' ? 'bg-red-100 text-red-700' : 
-                        res.calibrationStatus === 'aligned_expert' ? 'bg-green-100 text-green-700' : 'bg-gray-200'
+                        res.calibrationStatus === 'aligned_expert' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700'
                     }`}>
                         {res.calibrationStatus}
                     </span>
