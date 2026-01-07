@@ -1,13 +1,18 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 
-// Initialize the client
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
 export async function POST(req: Request) {
   try {
+    // 1. Debug: Check if Key exists
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error("Missing ANTHROPIC_API_KEY in Netlify Environment Variables.");
+    }
+
+    // Initialize the client inside the request to ensure env var is loaded
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+
     const { skillName, mistakeContext, userLevel } = await req.json();
 
     const prompt = `
@@ -37,12 +42,18 @@ export async function POST(req: Request) {
     });
 
     // Extract text safely
-    const textContent = message.content[0].type === 'text' ? message.content[0].text : "Error generating lesson.";
+    const textContent = message.content[0].type === 'text' ? message.content[0].text : "No text returned.";
 
     return NextResponse.json({ lesson: textContent });
 
-  } catch (error) {
-    console.error('AI Error:', error);
-    return NextResponse.json({ error: 'Failed to generate training' }, { status: 500 });
+  } catch (error: any) {
+    console.error('AI API Error:', error);
+    
+    // Return the ACTUAL error message to the frontend so we can see it
+    return NextResponse.json({ 
+      error: true, 
+      message: error.message || "Unknown Error",
+      type: error.constructor.name 
+    }, { status: 500 });
   }
 }

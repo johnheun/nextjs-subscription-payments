@@ -114,7 +114,7 @@ export default function FreightAssessmentPage() {
     }
   };
 
-  const handleFixGap = async (result: AssessmentResult) => {
+const handleFixGap = async (result: AssessmentResult) => {
     setIsModalOpen(true);
     setLoadingTraining(true);
     setCurrentTrainingSkill(result.skillName);
@@ -132,9 +132,16 @@ export default function FreightAssessmentPage() {
       });
       
       const data = await response.json();
-      setTrainingContent(data.lesson || "Could not generate lesson.");
-    } catch (e) {
-      setTrainingContent("Error connecting to training engine.");
+      
+      if (data.error) {
+        // SHOW THE REAL ERROR
+        setTrainingContent(`System Error: ${data.message}`);
+      } else {
+        setTrainingContent(data.lesson || "Could not generate lesson.");
+      }
+
+    } catch (e: any) {
+      setTrainingContent(`Connection Error: ${e.message}`);
     } finally {
       setLoadingTraining(false);
     }
