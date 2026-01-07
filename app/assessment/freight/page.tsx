@@ -45,14 +45,17 @@ export default function FreightAssessmentPage() {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+        // STRATEGY: Define payload first so we can suppress the error on a single line
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await supabase.from('assessment_results').insert({
+        const payload: any = {
             user_id: user.id,
             skill_id: resultData.skillId,
             self_rating: resultData.selfRating,
             is_correct: resultData.isCorrect,
             calibration_status: resultData.calibrationStatus
-        } as any);
+        };
+        
+        await supabase.from('assessment_results').insert(payload);
     }
 
     if (currentIndex + 1 < FREIGHT_DATA.length) {
