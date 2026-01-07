@@ -59,7 +59,8 @@ function TrainingModal({ isOpen, onClose, isLoading, simulation, skillName }: Tr
                     CUST
                 </div>
                 <div className="bg-red-50 p-4 rounded-r-xl rounded-bl-xl text-gray-900 font-medium border border-red-100 shadow-sm">
-                    "{simulation.customer_dialogue}"
+                    {/* FIXED: Used HTML entities for quotes to satisfy linter */}
+                    &quot;{simulation.customer_dialogue}&quot;
                 </div>
             </div>
 
