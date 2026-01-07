@@ -45,7 +45,6 @@ export default function FreightAssessmentPage() {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-        // STRATEGY: Define payload first so we can suppress the error on a single line
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const payload: any = {
             user_id: user.id,
@@ -83,14 +82,16 @@ export default function FreightAssessmentPage() {
                     </span>
                 </div>
                 {res.trainingPath !== 'none' && (
-                    <button className="text-sm bg-indigo-600 text-white px-3 py-1 rounded">
+                    // BRANDING: Royal Blue Button
+                    <button className="text-sm bg-blue-700 text-white px-3 py-1 rounded hover:bg-blue-800">
                         Fix Gap
                     </button>
                 )}
               </div>
             ))}
           </div>
-          <button onClick={() => window.location.href = '/dashboard'} className="mt-8 text-indigo-600 font-bold hover:underline">
+          {/* BRANDING: Royal Blue Button */}
+          <button onClick={() => window.location.href = '/dashboard'} className="mt-8 w-full py-3 bg-blue-700 text-white rounded-xl font-bold hover:bg-blue-800 transition-all shadow-md">
             Return to Dashboard
           </button>
         </div>
