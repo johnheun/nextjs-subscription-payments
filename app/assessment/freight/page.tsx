@@ -4,7 +4,6 @@ import { useState } from 'react';
 import CalibratedQuestion, { AssessmentResult } from '@/components/assessment/CalibratedQuestion';
 import { createClient } from '@/utils/supabase/client';
 
-// FIXED: Defined specific types for the Modal props instead of 'any'
 interface TrainingModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -114,7 +113,7 @@ export default function FreightAssessmentPage() {
     }
   };
 
-const handleFixGap = async (result: AssessmentResult) => {
+  const handleFixGap = async (result: AssessmentResult) => {
     setIsModalOpen(true);
     setLoadingTraining(true);
     setCurrentTrainingSkill(result.skillName);
@@ -134,14 +133,15 @@ const handleFixGap = async (result: AssessmentResult) => {
       const data = await response.json();
       
       if (data.error) {
-        // SHOW THE REAL ERROR
         setTrainingContent(`System Error: ${data.message}`);
       } else {
         setTrainingContent(data.lesson || "Could not generate lesson.");
       }
 
-    } catch (e: any) {
-      setTrainingContent(`Connection Error: ${e.message}`);
+    } catch (e: unknown) {
+      // STRICT FIX: Safely check error type before accessing .message
+      const errorMessage = e instanceof Error ? e.message : "Unknown connection error";
+      setTrainingContent(`Connection Error: ${errorMessage}`);
     } finally {
       setLoadingTraining(false);
     }

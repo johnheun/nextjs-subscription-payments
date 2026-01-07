@@ -3,12 +3,10 @@ import Anthropic from '@anthropic-ai/sdk';
 
 export async function POST(req: Request) {
   try {
-    // 1. Debug: Check if Key exists
     if (!process.env.ANTHROPIC_API_KEY) {
       throw new Error("Missing ANTHROPIC_API_KEY in Netlify Environment Variables.");
     }
 
-    // Initialize the client inside the request to ensure env var is loaded
     const anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
@@ -41,19 +39,21 @@ export async function POST(req: Request) {
       ]
     });
 
-    // Extract text safely
     const textContent = message.content[0].type === 'text' ? message.content[0].text : "No text returned.";
 
     return NextResponse.json({ lesson: textContent });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('AI API Error:', error);
     
-    // Return the ACTUAL error message to the frontend so we can see it
+    // STRICT FIX: Safely check error type before accessing .message
+    const errorMessage = error instanceof Error ? error.message : "Unknown Error";
+    const errorType = error instanceof Error ? error.constructor.name : "UnknownType";
+    
     return NextResponse.json({ 
       error: true, 
-      message: error.message || "Unknown Error",
-      type: error.constructor.name 
+      message: errorMessage,
+      type: errorType 
     }, { status: 500 });
   }
 }
